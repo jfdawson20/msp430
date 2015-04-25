@@ -1,0 +1,11 @@
+#ifndef MISC_H
+#define MISC_H
+
+#include "hardware.h"
+
+int  HardwareInit();
+int  SysInit();
+void delay(unsigned int d);
+
+
+#endif //MISC_H

@@ -1,0 +1,17 @@
+/* memmap */
+INCLUDE /usr/msp430/lib/ldscripts/msp430g2553/periph.x
+MEMORY
+{
+    rom : ORIGIN = 0xFA00, LENGTH = 0xFFDF-0xFA00
+    ram : ORIGIN = 0x0350, LENGTH = 0x03FF-0x0350
+    vect : ORIGIN = 0xFFE0, LENGTH = 0x20
+}
+
+SECTIONS
+{
+     VECTORS : { lib/vectortable.o } > vect
+    .text    : { *(.text*) } > rom
+    .rodata  : { *(.rodata*) } > rom
+    .data    : { *(.data*) } > ram
+    .bss     : { *(.bss*) } > ram
+}

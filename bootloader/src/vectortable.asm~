@@ -1,0 +1,16 @@
+.word 0xC000     /* Address : 0xFFE0 , RESERVED*/
+.word 0xC002     /* Address : 0xFFE2 , RESERVED*/
+.word 0xC004     /* Address : 0xFFE4 , Source = I/O Port 1*/
+.word 0xC006     /* Address : 0xFFE6 , Source = I/O Port 2*/
+.word 0xC008     /* Address : 0xFFE8 , RESERVED */
+.word 0xC00A     /* Address : 0xFFEA , Source = ADC10*/
+.word 0xC00C     /* Address : 0xFFEC , Source = USCI_A0/USCI_B0 Tx, B0 I2C Rx/Tx*/
+.word user_USCI_1_INT  /* Address : 0xFFEE , Source = USCI_A0/USCI_B0 RX, B0 I2C Rx/TX*/
+.word 0xC010     /* Address : 0xFFF0 , Source = Timer0_A3*/
+.word 0xC012     /* Address : 0xFFF2 , Source = Timer0_A3*/
+.word 0xC014     /* Address : 0xFFF4 , Source = Watchdog Timer+*/
+.word 0xC016     /* Address : 0xFFF6 , Source = Comparator_A+*/
+.word 0xC018     /* Address : 0xFFF8 , Source = Timer1_A3*/
+.word 0xC01A     /* Address : 0xFFFA , Source = Timer1_A3*/
+.word 0xC01C     /* Address : 0xFFFC , Source = NMI/OSC Fault/Mem Violation*/
+.word reset      /* Address : 0xFFFE , Source = POR/ER/WT/FKV/PC*/

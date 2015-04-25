@@ -1,0 +1,1 @@
+msp430-gcc -I include -mmcu=msp430g2553 src/main.c src/misc.c src/adc.c src/uart.c -o test.elf src/PIDControl.c src/timer.c

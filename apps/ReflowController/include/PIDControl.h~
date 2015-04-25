@@ -1,0 +1,33 @@
+#ifndef PIDCONTROL_H
+#define PIDCONTROL_H
+
+#include "hardware.h"
+
+struct PIDControl 
+{
+  int coefP;
+  int coefI;
+  int coefD; 
+  int setPoint;
+  int lastInput; 
+  int lastTime; 
+  int *input1; 
+  int *input2;
+  int *input3;
+  int *input4;
+  int *output1;
+  int *output2; 
+};
+
+int PIDInit(struct PIDControl *p, int * input1, int * input2, int * input3, int * input4, int * output1, intput2);
+int SetPIDTuning(struct PIDControl *p, int P, int I, int D);
+int PIDSetPoint(struct PIDControl *p, int setpoint);
+int CalculatePID(struct PIDControl *p);
+int AutoCal(struct PIDControl *p);
+
+
+
+
+
+
+#endif
