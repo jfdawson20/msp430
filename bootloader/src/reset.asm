@@ -1,3 +1,9 @@
+;msp430 global interrupt table functions
+;maps all hw interrupts
+;all interrupts simply passed to the userspace interrupt table 
+;starting at offset 0xC000 with the exception of the reset vector 
+;the reset vector always points to the bootloader 
+
 .global user_NMI_INT
 user_NMI_INT: 
     mov &0xC01C, r0

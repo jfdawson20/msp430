@@ -1,3 +1,7 @@
+;msp430 global hw interrupt table 
+;holds pointers to each function responsible for handling each 
+;interrupt
+;see reset.asm for details regarding each function 
 .word hang                     /* Address : 0xFFE0 , RESERVED*/
 .word hang                     /* Address : 0xFFE2 , RESERVED*/
 .word user_IOPORT1_INT         /* Address : 0xFFE4 , Source = I/O Port 1*/

@@ -1,5 +1,6 @@
 /* memmap */
-INCLUDE /usr/msp430/lib/ldscripts/msp430g2553/periph.x
+/* INCLUDE /usr/msp430/lib/ldscripts/msp430g2553/periph.x */
+INCLUDE ld/periph.x
 MEMORY
 {
     rom : ORIGIN = 0xFA00, LENGTH = 0xFFDF-0xFA00
