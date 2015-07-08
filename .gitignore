@@ -9,6 +9,8 @@
 *.elf
 *.bin
 *.list
+*.a43
+*.lst
  
 # Packages #
 ############
