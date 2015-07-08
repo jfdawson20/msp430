@@ -12,6 +12,8 @@ HLOPS = -Wall -emit-llvm
 
 LLCOPS = -march=msp430
 
+BIN = bin
+LIB = lib
 
 all : boot.hex
 
@@ -30,10 +32,15 @@ lib/vectortable.o : src/vectortable.asm
 lib/boot.o : src/boot.c 
 	msp430-gcc $(COPS) -c src/boot.c -o lib/boot.o
 
-boot.elf : ld/memmap lib/boot.o lib/vectortable.o	lib/reset.o
+boot.elf : ${BIN} ${LIB} ld/memmap lib/boot.o lib/vectortable.o	lib/reset.o
 	msp430-ld -T ld/memmap lib/boot.o lib/vectortable.o lib/reset.o -o bin/boot.elf
 
 boot.hex : boot.elf
 	msp430-objdump -D bin/boot.elf > bin/boot.list
 	msp430-objcopy -O ihex bin/boot.elf bin/boot.hex
 
+${BIN}:
+	mkdir bin 
+
+${LIB}:
+	mkdir lib
