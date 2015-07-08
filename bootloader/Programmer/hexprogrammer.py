@@ -1,13 +1,16 @@
+#!/usr/bin/python
 import argparse 
 import time 
 import serial 
 import sys
 
+#serial port write with delay function
 def serDelWrite(ser,line,delay):
       for c in line:
             ser.write(c)
             time.sleep(delay)
 
+#progress bar update and draw function
 def drawProgressBar(percent, barLen):
     sys.stdout.write("\r")
     progress = ""
@@ -19,6 +22,8 @@ def drawProgressBar(percent, barLen):
     sys.stdout.write("[ %s ] %.2f%%" % (progress, percent * 100))
     sys.stdout.flush()
 
+#start of main program 
+#argument parsing 
 parser = argparse.ArgumentParser(description='Hex Programmer Utility')
 parser.add_argument('-s','--serial', help='Serial Port Device File', required=True)
 parser.add_argument('-m','--mode',help='Mode: p = programming, r = read address range', default='p')
@@ -35,6 +40,7 @@ timeoutLimit = int(args['timeout'],10)
 baseAddr     = int(args['base'],16)
 endAddr      = int(args['end'],16)
 
+#setup serial port 
 ser = serial.Serial(
 	port=port,
 	baudrate=115200,
@@ -44,6 +50,7 @@ ser = serial.Serial(
 	timeout=.1
 )
 
+#open hex file 
 with open(hexFile) as f:
 	fileContent = f.readlines()
     
@@ -54,7 +61,8 @@ print "Author : J.Dawson"
 print "Date   : 1/15/2015"
 print "--------------------------------"
 
-if (mode == 'p'):
+
+if (mode == 'p'): #programming mode selected 
       print ""
       print ""
       print "Port   : " + port 
@@ -69,9 +77,11 @@ if (mode == 'p'):
 	      if (stop == 1): 
 		      break; 
 	      drawProgressBar(float(i)/float(n-1), barLen = 30)	
-	      #time.sleep(.2)
 	      ser.write(lines) 
-	      ret = ser.read()	
+	      ret = ser.read()
+	      # bootloader responds with '-' ascii character for failed transmissions
+              # responds with '+' for success 
+              # while failing retry until timeout expires 	
 	      while(ret == '-' or len(ret) == 0):
 		      ser.write(lines) 
 		      ret = ser.read()
@@ -87,7 +97,7 @@ if (mode == 'p'):
       print "Finished\n"
       
       
-elif (mode == 'r'):
+elif (mode == 'r'): #read range of addresses
       print "read mode\n"
 
       ser.write('R'+hex(baseAddr)[2:].upper()+hex(endAddr)[2:].upper()+'\r')
