@@ -1,4 +1,4 @@
-INC             = inc
+INC  = inc
 
 COPS = -Wall -O2 -nostdlib -nostartfiles -ffreestanding 
 
@@ -30,7 +30,7 @@ lib/vectortable.o : src/vectortable.asm
 	msp430-as $(AOPS) src/vectortable.asm -o lib/vectortable.o
 
 lib/boot.o : src/boot.c 
-	msp430-gcc $(COPS) -c src/boot.c -o lib/boot.o
+	msp430-gcc $(COPS) -I ${INC} -c src/boot.c -o lib/boot.o
 
 boot.elf : ${BIN} ${LIB} ld/memmap lib/boot.o lib/vectortable.o	lib/reset.o
 	msp430-ld -T ld/memmap lib/boot.o lib/vectortable.o lib/reset.o -o bin/boot.elf

@@ -2,56 +2,21 @@
 #include <signal.h>
 #include <iomacros.h>
 #include <msp430g2553.h>
+#include "boot.h"
 
-
-
-/* Memory Map */
-#define SFR_BASE             0x0000
-#define SFR_TOP              0x000F
-#define R8_BIT_PERIPH_BASE   0x0010
-#define R8_BIT_PERIPH_TOP    0x00FF
-#define R16_BIT_PERIPH_BASE  0x100
-#define R16_BIT_PERIPH_TOP   0x1FF
-#define RAM_BASE             0x0200
-#define RAM_TOP              0x03FF
-#define INFO_BASE            0x1000
-#define INFO_TOP             0x10FF
-#define USER_VEC_TABLE_BASE  0xC000
-#define USER_VEC_TABLE_TOP   0xC01E
-#define USER_FLASH_BASE      0xC020
-#define USER_FLASH_TOP       0xF9FF
-#define BOOT_FLASH_BASE      0xFBFF
-#define BOOT_FLASH_TOP       0xFFDE
-#define MSR_VEC_TABLE_BASE   0xFFE0
-#define MSR_VEC_TABLE_TOP    0xFFFE
-
-/* other defines */
-#define ENTER_BOOT 0xAA
-
-int BootgetC_NonBlocking(char *readVal);
-char BootgetC_Blocking();
-int  BootputC(char c);
-int  UartWriteBuffer(char *s);
-int WriteAck(int val);
-int eraseFlash();
-int writeFlashByte(unsigned char data, unsigned int address);
-int writelineFlash(unsigned char * buf, unsigned int address, unsigned int byteCount);
-unsigned int strToHex(unsigned char * buf, int start, int end);
-unsigned int asciiToHex(char ascii) ;
-int calcCB(unsigned char *data, int len, unsigned char expected);
-char parseLine(unsigned char * buffer, int length);
-
+/* Main Bootloader Code */
 int bootloader()
 {
  
+  /* Variable Declarations */
   unsigned long timeoutCount = 0;
-  int enterBoot = -1;
-  char read = 0;
+  int           enterBoot    = -1;
+  char          read         = 0;
   unsigned char readBuffer[64];
-  char success = 0;
-  unsigned int i = 0;
-  unsigned int startAddress = 0;
-  unsigned int endAddress = 0;
+  char          success      = 0;
+  unsigned int  i            = 0;
+  unsigned int  startAddress = 0;
+  unsigned int  endAddress   = 0;
   
   
   /********************************** System HW Init *********************************/
@@ -88,17 +53,22 @@ int bootloader()
   /********************************** Flash Controller init *********************************/
   
   UartWriteBuffer("clearc\r\n");
+  
+  /* main loop */
   while(1)
   {   
-      read = BootgetC_Blocking();
+      //Wait for incoming character from host
+      read = BootGetC_Blocking();
       i = 0;
+      // Erase command received 
+      // Erase User Flash command : ascii 'EU'
       if (read == 'E') 
       {
-            read = BootgetC_Blocking();
+            read = BootGetC_Blocking();
             while((read != '\0') && (read != '\r') )
             {
                 readBuffer[i] = read;
-                read = BootgetC_Blocking();
+                read = BootGetC_Blocking();
                 i = i + 1;
             }
             if (readBuffer[0] == 'U')
@@ -106,14 +76,16 @@ int bootloader()
                 i = USER_FLASH_BASE;
                 while(i < USER_FLASH_TOP)
                 {
-                    eraseFlash(i);
+                    EraseFlash(i);
                     i = i + 0x200;
                 }
-                BootputC('+');
+                //Return ascii '+' on sucessfu
+                BootPutC('+');
             }
             else
             {
-                BootputC('-');
+                //return ascii '-' on failure
+                BootPutC('-');
             }
             
       }
@@ -121,77 +93,59 @@ int bootloader()
       /* Read Address */
       else if (read == 'R')
       {
-            read = BootgetC_Blocking();
+            read = BootGetC_Blocking();
             while((read != '\0') && (read != '\r') )
             {
                 readBuffer[i] = read;
-                read = BootgetC_Blocking();
+                read = BootGetC_Blocking();
                 i = i + 1;
             }
             
+            // Check if command recieved is the correct length 
+            // A vaild read command needs eight characters 
+            // 0 to 3 is the start address in hex 
+            // 4 to 7 is the end address in hex 
             if (i == 8) 
             {
                   
-                  startAddress = strToHex(readBuffer,0,3);
-                  endAddress = strToHex(readBuffer,4,7);
+                  startAddress = StrToHex(readBuffer,0,3);
+                  endAddress = StrToHex(readBuffer,4,7);
                   for (i = startAddress;i<startAddress+(endAddress-startAddress);i++)
                   {
-                        BootputC(*(unsigned char *)i);
+                        BootPutC(*(unsigned char *)i);
                   }
-                  //BootputC('+');
-                  
+   
             }
             else 
             {
-                  BootputC('-');
+                  BootPutC('-');
             }
       }
-      else if (read == 'W') 
-      {
-            read = BootgetC_Blocking();
-            while((read != '\0') && (read != '\r') )
-            {
-                readBuffer[i] = read;
-                read = BootgetC_Blocking();
-                i = i + 1;
-            }
-            
-            if (i == 8) 
-            {
-                  
-                  startAddress = strToHex(readBuffer,0,3);
-                  endAddress = strToHex(readBuffer,4,7);
-                  for (i = startAddress;i<startAddress+(endAddress-startAddress);i++)
-                  {
-                        BootputC(*(unsigned char *)i);
-                  }
-                  //BootputC('+');
-                  
-            }
-            else 
-            {
-                  BootputC('-');
-            }
-      }
+    
+      // receiving a single 'X' will force the bootloader
+      // to exit. See '.global reset' function in reset.asm 
+      // for continued program flow 
       else if (read == 'X') 
       {
 	        UartWriteBuffer("Exit Bootloader\r\n");
 	        return(0);
       }
 
+      // start of hex file line 
       else if (read == ':') 
       {
-            read = BootgetC_Blocking();
+            read = BootGetC_Blocking();
             while((read != '\0') && (read != '\r') )
             {
                 
                 readBuffer[i] = read;
-                read = BootgetC_Blocking();
+                read = BootGetC_Blocking();
                 i = i + 1;
             }
             
-            success = parseLine(readBuffer,i);
-            BootputC(success);
+            //parse full line and return result '+' or '-'
+            success = ParseLine(readBuffer,i);
+            BootPutC(success);
       }
 
   }
@@ -201,7 +155,11 @@ int bootloader()
   return (0);
 }
 
-int BootgetC_NonBlocking(char *readVal)
+/* Non-blocking Uart Rx Receive function 
+   checks Rx recieve flag and if false returns.
+   if true it sets the readVal pointer and returns 0 */
+   
+int BootGetC_NonBlocking(char *readVal)
 {
     int flag = -1;
     if ((UC0IFG & 0x0001) == 0x0001)
@@ -218,7 +176,9 @@ int BootgetC_NonBlocking(char *readVal)
     return(flag);
 }
 
-char BootgetC_Blocking()
+/* Blocking UART Rx Receive 
+   Waits indefinitely for UART to receive a byte */
+char BootGetC_Blocking()
 {
     char rx_ret;
     while ((UC0IFG & 0x0001) == 0x0000);		 		//Wait for rx_flag to be set
@@ -226,27 +186,32 @@ char BootgetC_Blocking()
     return(rx_ret);
 }
 
-int BootputC(char c)
+/* UART Tx Character */
+int BootPutC(char c)
 {
     while((UCA0STAT & 0x01) != 0); //block while USCI is busy
     UCA0TXBUF = c;
     return(0);
 }
 
-int  UartWriteBuffer(char *s)
+/* UART Tx Buffer */
+
+int UartWriteBuffer(char *s)
 {
     int j = 0;
     while(s[j] != '\n')
     {
-        BootputC(s[j]);
+        BootPutC(s[j]);
         j++;
     }
-    BootputC('\n');
-    BootputC('\r');
+    BootPutC('\n');
+    BootPutC('\r');
     return(0);
 }
 
-int eraseFlash(unsigned int dummyWrite)
+/* Erase Flash Function 
+   Used to erase user flash memory */
+int EraseFlash(unsigned int dummyWrite)
 {
     //make sure sector to erase is valid!!!
     if ((dummyWrite > BOOT_FLASH_BASE) || (dummyWrite < USER_VEC_TABLE_BASE))
@@ -269,7 +234,8 @@ int eraseFlash(unsigned int dummyWrite)
     return(0);
 }
 
-int writeFlashByte(unsigned char data, unsigned int address)
+/* Write byte to flash function */
+int WriteFlashByte(unsigned char data, unsigned int address)
 {
     
     //make sure address to write is valid!!!
@@ -293,14 +259,15 @@ int writeFlashByte(unsigned char data, unsigned int address)
     return(0);
 }
 
-int writelineFlash(unsigned char * buf, unsigned int address, unsigned int byteCount)
+/* Write Hex file line to flash */
+int WriteLineFlash(unsigned char * buf, unsigned int address, unsigned int byteCount)
 {
     int ret = 0;
     int i = 0;
     int adcounter = address;
     for(i = 0; i<byteCount*2;i = i + 2)
     {
-        ret = writeFlashByte(strToHex(buf,i,i+1),adcounter);
+        ret = WriteFlashByte(StrToHex(buf,i,i+1),adcounter);
         adcounter++;
         if(ret == -1)
         {
@@ -311,7 +278,8 @@ int writelineFlash(unsigned char * buf, unsigned int address, unsigned int byteC
     return(0);
 }
 
-char parseLine(unsigned char *workBuffer, int i)
+/* Parse incoming hex file line */
+char ParseLine(unsigned char *workBuffer, int i)
 {
         
         unsigned char  byteCount  = 0; 
@@ -320,12 +288,12 @@ char parseLine(unsigned char *workBuffer, int i)
 	    unsigned char  checkByte  = 0;
 	    unsigned char  cb         = 0;
         
-        byteCount  = strToHex(workBuffer,0,1); 
-	    address    = strToHex(workBuffer,2,5); 
-	    hexID      = strToHex(workBuffer,6,7);
-	    checkByte  = strToHex(workBuffer,i-2,i-1);
+        byteCount  = StrToHex(workBuffer,0,1); 
+	    address    = StrToHex(workBuffer,2,5); 
+	    hexID      = StrToHex(workBuffer,6,7);
+	    checkByte  = StrToHex(workBuffer,i-2,i-1);
 
-	    cb = calcCB(workBuffer,i-2 , checkByte);
+	    cb = CalcCB(workBuffer,i-2 , checkByte);
         
         if (cb == 0 )
         {
@@ -333,7 +301,7 @@ char parseLine(unsigned char *workBuffer, int i)
             /* write program data */
 		    if(hexID == 0x00)
 		    {
-                  writelineFlash((workBuffer+8), address,byteCount);
+                  WriteLineFlash((workBuffer+8), address,byteCount);
 		    }
 		
 		    /* End of File */
@@ -379,40 +347,43 @@ char parseLine(unsigned char *workBuffer, int i)
 	return('+');
 }
 
-unsigned int strToHex(unsigned char * buf, int start, int end)
+/* Convert subsection of a c string into a a hex integer */
+unsigned int StrToHex(unsigned char * buf, int start, int end)
 {
 	unsigned int n = 0;
 	int c  = start;
 	while(c <= end)
 	{
-		n = (n << 4) + asciiToHex(buf[c]);
+		n = (n << 4) + AsciiToHex(buf[c]);
 		c = c + 1;
 	}
 	
 	return(n);
 }
 
-unsigned int asciiToHex(char ascii) 
+/* Convert ascii character to its hex representation 
+   e.g. 'A' converts to 0xA */
+unsigned int AsciiToHex(char ascii) 
 {
 
-      int i = 0; 
-      char Dict[16];   
-      Dict[0]  = '0';
-	    Dict[1]  = '1';
-	    Dict[2]  = '2';
-	    Dict[3]  = '3';
-	    Dict[4]  = '4';
-	    Dict[5]  = '5';
-	    Dict[6]  = '6';
-	    Dict[7]  = '7';
-	    Dict[8]  = '8';
-	    Dict[9]  = '9';
-	    Dict[10] = 'A';
-	    Dict[11] = 'B';
-	    Dict[12] = 'C';
-	    Dict[13] = 'D';
-	    Dict[14] = 'E';
-	    Dict[15] = 'F';
+    int i = 0; 
+    char Dict[16];   
+    Dict[0]  = '0';
+	Dict[1]  = '1';
+	Dict[2]  = '2';
+	Dict[3]  = '3';
+	Dict[4]  = '4';
+	Dict[5]  = '5';
+	Dict[6]  = '6';
+	Dict[7]  = '7';
+	Dict[8]  = '8';
+	Dict[9]  = '9';
+	Dict[10] = 'A';
+	Dict[11] = 'B';
+	Dict[12] = 'C';
+	Dict[13] = 'D';
+	Dict[14] = 'E';
+	Dict[15] = 'F';
 	
 	for (i = 0; i < 16;i++) 
 	{
@@ -425,13 +396,14 @@ unsigned int asciiToHex(char ascii)
 	return (-1);
 }
 
-int calcCB(unsigned char *data, int len, unsigned char expected)
+/* Calculate checkbyte and compare to expected checkbyte value */
+int CalcCB(unsigned char *data, int len, unsigned char expected)
 {
 	int i;
 	unsigned int sum = 0;
 	for (i = 0; i< len;i=i+2)
 	{
-        sum += strToHex(data,i,i+1);
+        sum += StrToHex(data,i,i+1);
 	}
 	
 	sum = (~sum) + 1; 

@@ -91,7 +91,8 @@ if (mode == 'p'): #programming mode selected
 			      print "Programming Failed at line ("+str(i)+") : " + lines
 			      break;
               i = i + 1
-	
+
+
       print ""
       print ""
       print "Finished\n"
