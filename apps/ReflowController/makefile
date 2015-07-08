@@ -21,7 +21,7 @@ download: download-jtag
 #download: download-bsl
 
 #additional rules for files
-${NAME}.elf: ${OBJECTS}
+${NAME}.elf: ${BIN} ${LIB} ${OBJECTS}
 	 msp430-gcc -mmcu=msp430g2553 -T ld/msp430.x lib/main.o lib/misc.o lib/uart.o lib/adc.o lib/PIDControl.o lib/timer.o -o bin/reflow.elf
 
 ${NAME}.a43: ${BIN}/${NAME}.elf
@@ -44,6 +44,11 @@ dist:
 FORCE:
 
 #project dependencies
+${BIN}: 
+	mkdir bin
+
+${LIB}:
+	mkdir lib
 	
 ${LIB}/main.o: ${SRC}/main.c 
 	msp430-gcc $(COPS) -iquote ${INC} -c -o $@ ${SRC}/main.c 
