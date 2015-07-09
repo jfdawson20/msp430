@@ -1,13 +1,5 @@
 #include "hardware.h"
 
-
-
-char UWriteBuffer[64] = {};
-char UReadBuffer[64] = {};
-unsigned int i = 0; //Counter
-unsigned int recCounter = 0;
-
-
 /*  Function       : UartInit()
 	Author         : Jack Dawson
 	Date           : 11/26/2014
@@ -17,6 +9,11 @@ unsigned int recCounter = 0;
 					 8 data, 1 stop, no parity
 					 Return Values  : int - 0 (success)
 */
+
+/* Global buffers and stuff */
+char UWriteBuffer[64] = {};
+char UReadBuffer[64] = {};
+unsigned int recCounter = 0;
 
 
 int  UartInit()
@@ -45,7 +42,6 @@ int  UartInit()
     //clear buffers and counters
     memset(UWriteBuffer, 0, 32);
     memset(UReadBuffer, 0, 32);
-    i = 0;
     recCounter = 0;
     return(0);
 }
@@ -161,10 +157,6 @@ __interrupt void USCI0RX_ISR(void)
 
     /* clear tx buffer */
     memset(UWriteBuffer, 0, 64);
-   
-    //memset(UReadBuffer, 0, 64);
-    // recCounter = 0;
-   // i = 0;
         
     /* Process Received Char */
     /* If a return character is received*/
@@ -439,7 +431,7 @@ __interrupt void USCI0RX_ISR(void)
         }
     }
 
-	/* Echo recieved character */
+	/* Echo received character */
     else 
     {
         UReadBuffer[recCounter] = CharRead;

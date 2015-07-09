@@ -1,5 +1,7 @@
 #include "hardware.h"
 
+/* Hardware init wrapper function 
+   calls all system and periph io init stuff */
 int HardwareInit()
 {
   SysInit();  //setup clocking 
@@ -12,6 +14,8 @@ int HardwareInit()
   return(0);
 }
 
+/* System initialization
+   Disables WDT, Sets Clocks */
 int SysInit()
 {
   //Disable WDT

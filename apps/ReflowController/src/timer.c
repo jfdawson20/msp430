@@ -2,6 +2,8 @@
 
 extern volatile struct PIDControl PIDHandle0; 
 
+/* Initialize timer A0 
+   Used to set the PIDcalculate update period */
 int TimerA0Init(int ticks)
 {          
 
@@ -11,6 +13,8 @@ int TimerA0Init(int ticks)
 	return(0);
 }
 
+/* Initialize Timer A0 as a PWM controller 
+   IO P2.1 and P2.4 will be the two PDM outputs */
 int TimerA1Init()
 {
     //setup output ports
@@ -27,10 +31,12 @@ int TimerA1Init()
 	return(0);
 }
 
+/* Update PWM (i.e. current duty cycle + offset)*/
 int PWMUpdate(int duty, int out)
 { 
 	unsigned int current;
 
+    /* Grab the current duty cycle */
     if (out == 2)
 	{
 	 	current = TA1CCR2;
@@ -44,6 +50,7 @@ int PWMUpdate(int duty, int out)
 		return(-1);
 	}
 
+    /* Only update PWM duty cycle if it falls within the minimum and maximum ranges */
 	if((duty + current) >= MINOUT_12k && (duty + current) <= MAXOUT_12k)
 	{
 		if (out == 2) 
@@ -54,6 +61,7 @@ int PWMUpdate(int duty, int out)
 
 		return(0);
 	}
+    /* Return -1 on failure */
 	else
 	{
 		return(-1);
@@ -61,6 +69,7 @@ int PWMUpdate(int duty, int out)
 	
 }
 
+/* Set the current PWM duty cycle */
 int PWMSet(unsigned int duty, int out)
 {	
 	if((duty) >= MINOUT_12k && (duty) <= MAXOUT_12k)
@@ -81,6 +90,8 @@ int PWMSet(unsigned int duty, int out)
 }
 
 
+/* Timer A0 interrupt 
+   Each interrupt triggers a recalculation of the PID control loop */
 #pragma vector = TIMER0_A0_VECTOR 
 __interrupt void TA0_ISR (void)
 {

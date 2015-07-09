@@ -1,6 +1,6 @@
 #include "hardware.h"
 
-
+/* Initialize PID Control Structure */
 int PIDInit(volatile struct PIDControl *p)
 {
   p->coefP = 3;
@@ -12,6 +12,8 @@ int PIDInit(volatile struct PIDControl *p)
    
   return(0);
 }
+
+/* Update tuning parameters */
 int SetPIDTuning(volatile struct PIDControl *p, int P, int I, int D)
 {
   p->coefP = P;
@@ -20,6 +22,7 @@ int SetPIDTuning(volatile struct PIDControl *p, int P, int I, int D)
   return(0);
 }
 
+/* Main PID Update Function */
 int CalculatePID(volatile struct PIDControl *pstruct)
 {
   int32_t u;
@@ -71,12 +74,15 @@ int CalculatePID(volatile struct PIDControl *pstruct)
   return(0);
 }
 
+/* Modify PID Target Setpoint */
 int PIDSetPoint(volatile struct PIDControl *p, int setpoint)
 {
   p->setPoint = setpoint;
   return(0);
 
 }
+
+/* Autocal funciton, not implemented */
 int AutoCal(volatile struct PIDControl *p)
 {
 
