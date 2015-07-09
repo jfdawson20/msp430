@@ -15,7 +15,7 @@ int main(void)
   /* set P, I and D coefficients */
   SetPIDTuning(&PIDHandle0, 2, 1,0);
   
-  /* Set inital temperature target to 150C*/
+  /* Set initial temperature target to 150C*/
   PIDSetPoint(&PIDHandle0,150);
 
   while(1){}
