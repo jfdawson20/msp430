@@ -6,15 +6,19 @@ volatile struct PIDControl PIDHandle0;
 int main(void) 
 {
 
+  /* Initalize HW: Peripherals, Clocks, WDT*/
   HardwareInit();
+  
+  /* Create a PID controller struct */
   PIDInit(&PIDHandle0);
+  
+  /* set P, I and D coefficients */
   SetPIDTuning(&PIDHandle0, 2, 1,0);
+  
+  /* Set inital temperature target to 150C*/
   PIDSetPoint(&PIDHandle0,150);
 
-  while(1)
-  {
-
-  }
+  while(1){}
 
   return(0);
 }
