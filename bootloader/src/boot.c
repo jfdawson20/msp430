@@ -9,7 +9,11 @@ int bootloader()
 {
  
   /* Variable Declarations */
-  unsigned long timeoutCount = 0;
+	int           ret          = -1;
+  int 				  timeout      = 0;
+	int 					jump2code    = 0;
+	unsigned long tcounter_a    = 0;
+  unsigned long tcounter_b    = 0;
   int           enterBoot    = -1;
   char          read         = 0;
   unsigned char readBuffer[64];
@@ -52,14 +56,43 @@ int bootloader()
   
   /********************************** Flash Controller init *********************************/
   
-  UartWriteBuffer("clearc\r\n");
   
+	while(tcounter_a <3800)
+	{
+		tcounter_b=0;
+		if(jump2code == -1)
+		{
+			BootPutC('+');
+			break;
+		}
+		while(tcounter_b < 1000)
+		{
+			 ret = BootGetC_NonBlocking(&read);
+			 if(ret == 0 && read == 'b')
+			 {
+					jump2code = -1;
+					break;
+			 }
+			 tcounter_b++;
+		}
+		tcounter_a++;
+	}
+
+  
+	if(jump2code == 0)
+	{
+		UartWriteBuffer("Exiting Bootloader\r\n");
+		return(0);
+	}
+
   /* main loop */
   while(1)
   {   
-      //Wait for incoming character from host
-      read = BootGetC_Blocking();
       i = 0;
+			timeout = 0;
+      
+			//Wait for incoming character from host
+		  read = BootGetC_Blocking();
       // Erase command received 
       // Erase User Flash command : ascii 'EU'
       if (read == 'E') 
@@ -96,16 +129,24 @@ int bootloader()
             read = BootGetC_Blocking();
             while((read != '\0') && (read != '\r') )
             {
-                readBuffer[i] = read;
-                read = BootGetC_Blocking();
-                i = i + 1;
+								if(i < 64)
+								{
+                	readBuffer[i] = read;
+                	read = BootGetC_Blocking();
+                	i = i + 1;
+								}
+								else
+								{
+									timeout = -1;
+									break;
+								}
             }
             
             // Check if command recieved is the correct length 
             // A vaild read command needs eight characters 
             // 0 to 3 is the start address in hex 
             // 4 to 7 is the end address in hex 
-            if (i == 8) 
+            if (i == 8 ) 
             {
                   
                   startAddress = StrToHex(readBuffer,0,3);
@@ -137,22 +178,38 @@ int bootloader()
             read = BootGetC_Blocking();
             while((read != '\0') && (read != '\r') )
             {
-                
-                readBuffer[i] = read;
-                read = BootGetC_Blocking();
-                i = i + 1;
+                if(i < 64)
+								{
+                	readBuffer[i] = read;
+                	read = BootGetC_Blocking();
+                	i = i + 1;
+								}
+								else
+								{
+									BootPutC('-');
+									timeout = -1;
+									break;
+								}
             }
             
             //parse full line and return result '+' or '-'
-            success = ParseLine(readBuffer,i);
-            BootPutC(success);
+						if(timeout == 0)
+						{
+            	success = ParseLine(readBuffer,i);
+            	BootPutC(success);
+						}
+
+						if(success == 0)
+						{
+							return(0);
+						}
       }
 
   }
  
   //jump to user reset vector 
   
-  return (0);
+  //return (0);
 }
 
 /* Non-blocking Uart Rx Receive function 
@@ -282,18 +339,18 @@ int WriteLineFlash(unsigned char * buf, unsigned int address, unsigned int byteC
 char ParseLine(unsigned char *workBuffer, int i)
 {
         
-        unsigned char  byteCount  = 0; 
+      unsigned char  byteCount  = 0; 
 	    unsigned int   address    = 0;
 	    unsigned char  hexID      = 0;
 	    unsigned char  checkByte  = 0;
 	    unsigned char  cb         = 0;
         
-        byteCount  = StrToHex(workBuffer,0,1); 
+      byteCount  = StrToHex(workBuffer,0,1); 
 	    address    = StrToHex(workBuffer,2,5); 
 	    hexID      = StrToHex(workBuffer,6,7);
 	    checkByte  = StrToHex(workBuffer,i-2,i-1);
 
-	    cb = CalcCB(workBuffer,i-2 , checkByte);
+	     cb = CalcCB(workBuffer,i-2 , checkByte);
         
         if (cb == 0 )
         {
@@ -307,7 +364,7 @@ char ParseLine(unsigned char *workBuffer, int i)
 		    /* End of File */
 		    else if (hexID == 0x01) 
 		    {
-
+					return(0);
 		    }
 				
 		    /* extended segment address , no used/supported */
